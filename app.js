@@ -3,6 +3,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const date=require(__dirname+"/date.js");
+const _=require("lodash");
 console.log(date());
 const mongoose = require('mongoose');
 mongoose.connect('mongodb://127.0.0.1/todoDB').then(() => {
@@ -25,10 +26,10 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
 
 const item1=new Todo({
-  name:"welcome"
+  name:"Welcome"
 });
 const item2=new Todo({
-  name:"hitt the + button to add a new item."
+  name:"Hit the + button to add a new item."
 });
 const item3=new Todo({
   name:"<--Hit this to delete an item. "
@@ -41,9 +42,15 @@ const defaultitems = [item1,item2,item3];
 // .catch(function(err){
 //   console.log(err);
 // }); 
+const listSchema =  new mongoose.Schema ({
+  name: String,
+  items:[todoSchema]
+});
 
+const List= mongoose.model("List",listSchema);
+const day =date();
 app.get("/", function(req, res){
-  let day =date();
+  
   Todo.find({}).then(founditem => {
     if(founditem.length===0){
       return Todo.insertMany(defaultitems);
@@ -57,11 +64,24 @@ app.get("/", function(req, res){
 });
 app.post("/",function(req,res){
   let item= req.body.newItem;
+  const listname =req.body.list;
   const newitem= new Todo({
     name:item
   });
+  if(listname===day){
   newitem.save();
   res.redirect("/"); 
+  }
+  else{
+    List.findOne({name: listname}) 
+  .then((foundList)=>{
+    foundList.items.push(item);
+    foundList.save();
+    res.redirect("/"+listname);
+  }).catch(function (err) {
+    console.log(err);
+  });
+  }
   // if(req.body.list==="WorkList"){
   //   workitems.push(item);
   //   res.redirect("/work");
@@ -71,16 +91,51 @@ app.post("/",function(req,res){
   //  res.redirect("/");
   // }
 });
-app.post("/delete",function(req,res){
+app.get("/:customlistName", function(req,res){
+  //adding new list that completed by the user
+ const customlistName = _.capitalize(req.params.customlistName);
+ 
+  List.findOne({name: customlistName}) 
+  .then((foundList)=> 
+  {
+     if(!foundList)
+     {
+       //Creating a new list 
+       const list = new List({
+         name: customlistName,
+         items: defaultitems
+      });
+      list.save();
+      res.redirect("/" + customlistName);
+     }
+     else
+     {
+       //Show an existing list
+       res.render("list", {listtitle: foundList.name, newlistitems: foundList.items
+      });
+     }
+  })
+  .catch((err)=>{
+    console.log(err);
+  })
+ }); 
+ app.post("/delete",function(req,res){
   const deleted=req.body.checkbox;
-  Todo.findByIdAndRemove(deleted).then(() => {
-    console.log('successfully deleted');
-  });
-  res.redirect("/");
+  const delnlname=req.body.listname;
+  if(delnlname===day){
+    Todo.findByIdAndRemove(deleted).then(() => {
+      console.log('successfully deleted');
+    });
+    res.redirect("/");
+  }
+  else{
+    List.findOneAndUpdate({name:delnlname},{$pull:{items:{_id:deleted}}}).then(()=>{
+      res.redirect("/"+delnlname);
+    });
+  }
+  
 })
-app.get("/work",function(req,res){
-    res.render("list",{listtitle:"WorkList",newlistitems:workitems});
-});
+
 app.get("/about",function(req,res){
   res.render("about");
 });
