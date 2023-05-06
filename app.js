@@ -6,7 +6,8 @@ const date=require(__dirname+"/date.js");
 const _=require("lodash");
 console.log(date());
 const mongoose = require('mongoose');
-mongoose.connect('mongodb://127.0.0.1/todoDB').then(() => {
+
+mongoose.connect('mongodb+srv://lakshmisriramadari1427:qhbiuawIMvcjEpDZ@cluster0.mrxx9gr.mongodb.net/todoDB').then(() => {
   console.log('Connected to MongoDB');
 }).catch((error) => {
   console.log('Error connecting to MongoDB', error);
@@ -17,9 +18,7 @@ mongoose.connect('mongodb://127.0.0.1/todoDB').then(() => {
 });
 
 const Todo = mongoose.model("Todo",todoSchema);
-let items=["Buy Food","Cook Food",
-"Eat Food"];
-let workitems=[];
+
 const app = express();
 app.set('view engine','ejs');
 app.use(bodyParser.urlencoded({extended: true}));
@@ -75,7 +74,7 @@ app.post("/",function(req,res){
   else{
     List.findOne({name: listname}) 
   .then((foundList)=>{
-    foundList.items.push(item);
+    foundList.items.push(newitem);
     foundList.save();
     res.redirect("/"+listname);
   }).catch(function (err) {
