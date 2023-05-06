@@ -1,7 +1,9 @@
 //jshint esversion:6
 
 const express = require("express");
+const app = express();
 const bodyParser = require("body-parser");
+const PORT = process.env.PORT || 3000;
 const date=require(__dirname+"/date.js");
 const _=require("lodash");
 console.log(date());
@@ -19,7 +21,7 @@ mongoose.connect('mongodb+srv://lakshmisriramadari1427:qhbiuawIMvcjEpDZ@cluster0
 
 const Todo = mongoose.model("Todo",todoSchema);
 
-const app = express();
+
 app.set('view engine','ejs');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
@@ -138,6 +140,6 @@ app.get("/:customlistName", function(req,res){
 app.get("/about",function(req,res){
   res.render("about");
 });
-app.listen(3000, function(){
-  console.log("Server started on port 3000.");
+app.listen(PORT, () => {
+  console.log(`server started on port ${PORT}`);
 });
